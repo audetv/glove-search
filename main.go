@@ -2,11 +2,10 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"glove-search/corpus"
 	"glove-search/search"
 	"glove-search/vectorizer"
-
-	"fmt"
 	"os"
 )
 
@@ -44,8 +43,18 @@ func main() {
 		fmt.Println("Векторизированный корпус успешно загружен.")
 	}
 
-	// Интерактивный поиск
+	// Выбор метода поиска
 	scanner := bufio.NewScanner(os.Stdin)
+	fmt.Println("Выберите метод поиска (cosine/knn):")
+	scanner.Scan()
+	method := scanner.Text()
+
+	if method != "cosine" && method != "knn" {
+		fmt.Println("Неправильный метод. Используйте 'cosine' или 'knn'.")
+		return
+	}
+
+	// Интерактивный поиск
 	for {
 		fmt.Println("Введите фразу для поиска (или 'exit' для выхода):")
 		scanner.Scan()
@@ -63,8 +72,17 @@ func main() {
 		}
 
 		// Поиск по корпусу
-		topN := 50
-		results, err := search.Search(queryVector, corpus.VectorizedLines, corpus.Lines, topN)
+		topN := 10
+		var results []search.SearchResult
+		var err error
+
+		switch method {
+		case "cosine":
+			results, err = search.Search(queryVector, corpus.VectorizedLines, corpus.Lines, topN)
+		case "knn":
+			results, err = search.KNNSearch(queryVector, corpus.VectorizedLines, corpus.Lines, topN)
+		}
+
 		if err != nil {
 			fmt.Println("Ошибка поиска:", err)
 			continue

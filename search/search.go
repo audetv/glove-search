@@ -11,8 +11,35 @@ type SearchResult struct {
 	Similarity float64
 }
 
-// Search выполняет поиск по корпусу.
+// Search выполняет поиск по корпусу с использованием косинусного сходства.
 func Search(queryVector []float64, corpus [][]float64, lines []string, topN int) ([]SearchResult, error) {
+	var results []SearchResult
+	for i, vec := range corpus {
+		if isZeroVector(vec) {
+			continue
+		}
+		sim, err := vectorizer.CosineSimilarity(queryVector, vec)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, SearchResult{Line: lines[i], Similarity: sim})
+	}
+
+	// Сортировка по убыванию сходства
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].Similarity > results[j].Similarity
+	})
+
+	// Выбор topN результатов
+	if len(results) > topN {
+		results = results[:topN]
+	}
+
+	return results, nil
+}
+
+// KNNSearch выполняет поиск по корпусу с использованием KNN.
+func KNNSearch(queryVector []float64, corpus [][]float64, lines []string, topN int) ([]SearchResult, error) {
 	var results []SearchResult
 	for i, vec := range corpus {
 		if isZeroVector(vec) {
